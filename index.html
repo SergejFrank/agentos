@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2027">
+<title>Agentos</title>
+<style>
+  :root {
+    --bg: #1b2027;
+    --panel: #262d37;
+    --line: #3a4350;
+    --text: #eef1f5;
+    --muted: #9aa5b4;
+    --card: #f1e7cf;
+    --card-text: #6e6758;
+    --card-dark: #a69c8d;
+    --rot: #d0402f;
+    --blau: #2c6fc0;
+    --neutral: #b9a987;
+    --attentaeter: #0c0c0e;
+    --select: #ffd54a;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  button, input { font: inherit; color: inherit; }
+  button {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  button.warn { background: var(--select); color: #2a2418; border-color: var(--select); }
+
+  /* ---------- Start ---------- */
+  #start {
+    min-height: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: max(28px, env(safe-area-inset-top)) 16px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #start h1 { margin: 0; font-size: 34px; letter-spacing: .12em; text-transform: uppercase; }
+  #start .sub { margin: 0; color: var(--muted); line-height: 1.45; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+  }
+  .panel h2 { margin: 0; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .panel p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+  .panel button { background: var(--bg); padding: 13px; font-size: 16px; }
+  .panel button.primary { background: var(--text); }
+  .codeinput {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: .3em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .codeinput::placeholder { color: var(--line); }
+
+  /* ---------- Tisch ---------- */
+  #tisch { height: 100dvh; display: flex; flex-direction: column; }
+  .bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  }
+  .score {
+    min-width: 62px;
+    padding: 5px 10px;
+    border-radius: 11px;
+    text-align: center;
+    color: #fff;
+    line-height: 1.1;
+    opacity: .5;
+    transition: opacity .2s, box-shadow .2s;
+  }
+  .score b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+  .score span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .score.rot { background: var(--rot); }
+  .score.blau { background: var(--blau); }
+  .score.active { opacity: 1; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #fff; }
+  .mid { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 16px; min-width: 0; }
+  .turn { text-align: center; line-height: 1.2; }
+  .turn b { display: block; font-size: 18px; }
+  .turn small { color: var(--muted); font-size: 12px; }
+  #tisch[data-turn="rot"] .turn b { color: #ff8a7a; }
+  #tisch[data-turn="blau"] .turn b { color: #7db4ff; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed var(--line);
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--text); font-size: 15px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+  /* Hochformat: Punktestand und Code oben, Knöpfe in einer eigenen Zeile darunter */
+  @media (max-width: 700px) and (orientation: portrait) {
+    .bar { gap: 6px 8px; }
+    .mid { display: contents; }
+    .score { grid-row: 1 / 3; min-width: 54px; }
+    .turn { grid-column: 2; grid-row: 1; }
+    .chip { grid-column: 2; grid-row: 2; justify-self: center; padding: 4px 8px; font-size: 12px; }
+    .actions { grid-column: 1 / -1; grid-row: 3; }
+    .actions button { flex: 1; max-width: 160px; padding: 8px 6px; }
+  }
+
+  .board {
+    flex: 1;
+    min-height: 0;
+    container-type: size;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4px max(10px, env(safe-area-inset-right)) 4px max(10px, env(safe-area-inset-left));
+  }
+  .grid {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: clamp(4px, 1cqw, 10px);
+    font-size: clamp(10px, min(3.3cqw, 5.5cqh), 38px);
+  }
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: clamp(5px, 1cqw, 10px);
+    background: var(--card);
+    color: var(--card-text);
+    font-size: inherit;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .4);
+  }
+  /* Jedes Wort steht doppelt auf der Karte: unten normal, oben kopfüber für die Gegenseite. */
+  .card .half { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+  /* Nur das Wort drehen, nicht die Hälfte: Safari schneidet gedrehte Kinder nicht an den runden Ecken ab. */
+  .card .half.flip {
+    background: var(--card-dark);
+    color: #f1e7cf;
+    border-radius: inherit;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .card .half.flip .word { transform: rotate(180deg); }
+  .card.open .half.flip { background: rgba(0, 0, 0, .22); color: inherit; }
+  .card.open.attentaeter .half.flip { background: rgba(255, 255, 255, .16); }
+  .card .word { flex: none; white-space: nowrap; }
+  .card .sep { flex: none; width: 100%; height: 0; }
+  .card.sel { background: #fff7dd; }
+  .card.sel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: 4px solid var(--select);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .card.open { box-shadow: none; cursor: default; }
+  .card.open .word { opacity: .9; }
+  .card.open.rot { background: var(--rot); color: #fff; }
+  .card.open.blau { background: var(--blau); color: #fff; }
+  .card.open.neutral { background: var(--neutral); color: #5d5338; }
+  .card.open.attentaeter { background: var(--attentaeter); color: #fff; outline: 2px solid #555; outline-offset: -2px; }
+  /* nach Spielende: Farbe der nicht aufgedeckten Karten andeuten */
+  .card.peek .sep { height: 14%; }
+  .card.peek.rot .sep { background: var(--rot); }
+  .card.peek.blau .sep { background: var(--blau); }
+  .card.peek.neutral .sep { background: var(--neutral); }
+  .card.peek.attentaeter .sep { background: var(--attentaeter); }
+
+  .hint {
+    margin: 0;
+    padding: 6px 12px max(8px, env(safe-area-inset-bottom));
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  @media (max-height: 480px) { .hint { display: none; } .board { padding-bottom: 8px; } }
+
+  /* ---------- Geheimdienstchef ---------- */
+  #chef {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: max(10px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  }
+  .chefbar { width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .chefbar .code { text-align: center; line-height: 1.15; }
+  .chefbar .code small { display: block; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .chefbar .code b { font-size: 20px; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+  .startinfo { margin: 0; font-size: 18px; font-weight: 700; }
+  .startinfo span { padding: 3px 10px; border-radius: 7px; color: #fff; }
+  .keyframe {
+    width: min(100%, 62dvh, 540px);
+    padding: 10px;
+    border-radius: 18px;
+    background: var(--panel);
+    border: 6px solid var(--line);
+    transition: transform .3s;
+  }
+  .keyframe.rot { border-color: var(--rot); }
+  .keyframe.blau { border-color: var(--blau); }
+  .keyframe.rotated { transform: rotate(180deg); }
+  .topmark {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 3px solid var(--text);
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .topmark span { display: inline-block; }
+  .rotated .topmark span { transform: rotate(180deg); }
+  .keygrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+  .kc {
+    position: relative;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 9px;
+    font-size: clamp(18px, 6vw, 30px);
+    font-weight: 700;
+    color: #fff;
+  }
+  .kc.rot { background: var(--rot); }
+  .kc.blau { background: var(--blau); }
+  .kc.neutral { background: var(--neutral); }
+  .kc.attentaeter { background: var(--attentaeter); outline: 2px solid #666; outline-offset: -2px; }
+  .kc.done { opacity: .28; }
+  .kc.done::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; }
+  .rotated .kc { transform: rotate(180deg); }
+  .legend { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .newcode { width: 100%; max-width: 360px; }
+  .note { margin: 0; max-width: 460px; text-align: center; font-size: 12px; line-height: 1.4; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<section id="start" hidden>
+  <h1>Agentos</h1>
+  <p class="sub">Ein Gerät liegt als Spielfeld auf dem Tisch. Die Geheimdienstchefs öffnen diese Seite auf dem eigenen Handy und tippen den 6-stelligen Code ein, um den Schlüssel zu sehen.</p>
+
+  <div class="panel">
+    <h2>Tisch-Gerät</h2>
+    <button id="btnResume" class="primary" hidden>Spiel fortsetzen</button>
+    <button id="btnNew" class="primary">Neues Spiel</button>
+  </div>
+
+  <form class="panel" id="chefForm" autocomplete="off">
+    <h2>Geheimdienstchef</h2>
+    <input id="codeInput" class="codeinput" inputmode="numeric" placeholder="000000" aria-label="6-stelliger Code">
+    <button id="btnChef" disabled>Schlüssel anzeigen</button>
+  </form>
+</section>
+
+<section id="tisch" hidden>
+  <header class="bar">
+    <div class="score rot" id="scoreRot"><b>9</b><span>Rot</span></div>
+    <div class="mid">
+      <div class="turn"><b id="turnText"></b><small id="turnSub"></small></div>
+      <span class="chip">Chef-Code <b id="tischCode"></b></span>
+      <div class="actions">
+        <button id="btnEnd">Zug beenden</button>
+        <button id="btnAgain">Neues Spiel</button>
+        <button id="btnMenu">Menü</button>
+      </div>
+    </div>
+    <div class="score blau" id="scoreBlau"><b>8</b><span>Blau</span></div>
+  </header>
+  <div class="board"><div class="grid" id="grid"></div></div>
+  <p class="hint">Karte antippen = auswählen · nochmal antippen = aufdecken</p>
+</section>
+
+<section id="chef" hidden>
+  <div class="chefbar">
+    <button id="btnBack">‹ Zurück</button>
+    <div class="code"><small>Schlüssel</small><b id="chefCode"></b></div>
+    <button id="btnRotate">180° drehen</button>
+  </div>
+  <p class="startinfo" id="startInfo"></p>
+  <div class="keyframe" id="keyframe">
+    <div class="topmark"><span>Oberkante Tisch-Gerät</span></div>
+    <div class="keygrid" id="keygrid"></div>
+  </div>
+  <p class="legend" id="legend"></p>
+  <button id="btnNewCode">Neuen Code eingeben</button>
+  <form class="panel newcode" id="newCodeForm" autocomplete="off" hidden>
+    <input id="newCodeInput" class="codeinput" inputmode="numeric" placeholder="000000" aria-label="Neuer 6-stelliger Code">
+    <button id="btnNewCodeGo" class="primary" disabled>Schlüssel anzeigen</button>
+  </form>
+  <p class="note">Feld antippen, um es für dich als aufgedeckt zu markieren. Sitzt du dem Spielfeld gegenüber, dreh den Schlüssel um 180°.</p>
+</section>
+
+<script>
+'use strict';
+
+const WORDS = [...new Set(`
+Hund Katze Maus Löwe Tiger Bär Adler Wal Hai Pferd Esel Schlange Spinne Biene Ameise Frosch Fuchs Wolf Hase Igel
+Rabe Eule Ente Schwan Pinguin Krebs Drache Einhorn Affe Elefant Kamel Ziege Schaf Kuh Schwein Huhn Hahn Fisch
+Käfer Fliege Mücke Schnecke Robbe Delfin Krokodil Papagei Storch Zebra Giraffe Jaguar Kater Pony Boxer Schimmel
+Bank Schloss Kiefer Ball Blatt Birne Strauß Tau Leiter Mutter Nagel Ton Tor Decke Flügel Kapelle Bremse Steuer
+Stift Strom Zug Zelle Absatz Bau Bogen Bund Erde Fall Feder Gericht Grund Hut Karte Kette Krone Lager Linse Mark
+Messe Netz Note Pass Pflaster Rolle Satz Schale Schild Schirm Schlag See Stamm Star Stock Stuhl Tafel Wurzel Zoll
+Fuß Auge Gang Golf Heide Atlas Bart Becken Brücke Daumen Dichtung Feld Fessel Futter Gabel Geist Glas Horn Kamm
+Kerze Kreuz Kugel Laster Läufer Leitung Masse Mine Mund Nadel Niete Pfeife Platte Pol Punkt Rad Riegel Ring
+Rücken Schalter Scheibe Schuppen Schnur Seite Sohle Spiegel Spitze Stand Stern Strand Tisch Turm Uhr Verband
+Wand Welle Wirbel Zahn Zunge Zylinder
+Berlin Paris London Rom Wien Moskau Tokio Kairo Athen Hamburg München Köln Alpen Afrika Europa Amerika China
+Indien Ägypten Italien Spanien Mexiko Brasilien Kanada Japan Türkei Schweiz Nordpol Mond Mars Sonne Saturn Venus
+Jupiter
+Auto Flugzeug Schiff Rakete Fahrrad Ballon Anker Kompass Kanone Schwert Bombe Pistole Gift Messer Hammer Säge
+Zange Schraube Bohrer Kabel Motor Roboter Computer Telefon Kamera Film Kino Theater Oper Zirkus Museum Schule
+Kirche Hotel Bahnhof Flughafen Hafen Markt Fabrik Burg Pyramide Tempel Brunnen Garten Wald Wüste Berg Tal Fluss
+Meer Insel Vulkan Höhle Gletscher Wolke Regen Schnee Eis Blitz Donner Sturm Wind Feuer Wasser Luft Rauch Nebel
+Schatten Licht Nacht Tag Zeit Jahr Winter Sommer Frühling Herbst
+Arzt Koch Pilot Soldat Polizist Dieb Spion König Königin Prinz Ritter Pirat Hexe Zauberer Riese Zwerg Engel
+Teufel Vampir Zombie Ninja Cowboy Bauer Bäcker Jäger Fischer Richter Anwalt Lehrer Schüler Doktor Kapitän
+Matrose Taucher Astronaut Clown Sänger Maler Dichter Tänzer Millionär Präsident Kaiser Papst Mönch Detektiv
+Agent Mörder Zeuge Opfer Held Genie Baby Oma
+Apfel Banane Kirsche Zitrone Orange Nuss Kuchen Torte Brot Käse Wurst Ei Milch Honig Zucker Salz Pfeffer Suppe
+Pizza Nudel Reis Kartoffel Tomate Zwiebel Gurke Salat Schokolade Bier Wein Kaffee Tee Saft Öl Essig Senf Butter
+Sahne Keks Bonbon
+Herz Hand Kopf Arm Bein Nase Ohr Haar Haut Blut Knochen Finger Knie Bauch Hals Lunge Gehirn Nerv Muskel
+Hemd Hose Schuh Stiefel Mantel Kleid Rock Gürtel Krawatte Handschuh Brille Tasche Koffer Bett Schrank Sofa Lampe
+Fenster Tür Dach Keller Küche Bad Treppe Ofen Kamin Teppich Vorhang Kissen Schlüssel Topf Pfanne Löffel Teller
+Tasse Flasche Eimer Besen Seife Bürste Handtuch
+Fußball Tennis Schach Würfel Poker Lotto Rennen Marathon Olympia Medaille Pokal Schläger Trommel Geige Gitarre
+Klavier Flöte Trompete Orgel Harfe Lied Tanz Walzer Jazz
+Liebe Tod Leben Krieg Frieden Glück Pech Traum Angst Mut Zorn Schuld Recht Gesetz Macht Geld Gold Silber Diamant
+Schatz Börse Kredit Preis Zahl Null Million Hälfte Kreis Quadrat Dreieck Linie Winkel Code Rätsel Geheimnis Plan
+Falle Spur Alarm Flucht Mission
+Atom Virus Bakterie Gen Laser Magnet Batterie Mikroskop Teleskop Satellit Komet Planet Galaxie Kristall Metall
+Eisen Kupfer Kohle Gas Sand Stein Fels Lehm Holz Baum Eiche Tanne Rose Tulpe Gras Moos Pilz Kaktus Palme Samen
+Blume Dorn
+Buch Brief Zeitung Papier Tinte Stempel Siegel Flagge Wappen Thron Zepter Maske Kostüm Puppe Schaukel Rutsche
+Zelt Rucksack Seil Knoten Angel Boot Floß Ruder Segel Mast Wrack Leuchtturm Tunnel Straße Kreuzung Ampel Schiene
+Bahn Bus Taxi Traktor Panzer U-Boot Kutsche Schlitten Ski
+`.trim().split(/\s+/))];
+
+const TEAM = { rot: 'Rot', blau: 'Blau' };
+const SAVE_KEY = 'agentos-tisch';
+const $ = id => document.getElementById(id);
+
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+/* ---------- Zufall ---------- */
+
+function randInt(n) {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] % n;
+}
+
+function sample(list, n) {
+  const a = list.slice();
+  for (let i = 0; i < n; i++) {
+    const j = i + randInt(a.length - i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
+
+// Deterministischer Zufallsgenerator: gleicher Code => gleicher Schlüssel auf jedem Gerät.
+function mulberry32(a) {
+  return () => {
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Der 6-stellige Code legt nur fest, wer beginnt und wo Rot/Blau/Neutral/Attentäter liegen.
+function keyFromCode(code) {
+  const rnd = mulberry32(Math.imul(Number(code) + 1, 0x9E3779B1));
+  const start = rnd() < 0.5 ? 'rot' : 'blau';
+  const other = otherTeam(start);
+  const cells = [
+    ...Array(9).fill(start),
+    ...Array(8).fill(other),
+    ...Array(7).fill('neutral'),
+    'attentaeter',
+  ];
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+  return { start, cells };
+}
+
+const otherTeam = t => t === 'rot' ? 'blau' : 'rot';
+const fmtCode = c => c.slice(0, 3) + ' ' + c.slice(3);
+
+/* ---------- Tisch-Gerät ---------- */
+
+let game = null;
+let key = null;
+let selected = -1;
+
+function newGame() {
+  const code = String(randInt(1e6)).padStart(6, '0');
+  game = {
+    code,
+    words: sample(WORDS, 25),
+    open: Array(25).fill(false),
+    turn: keyFromCode(code).start,
+    winner: null,
+    reason: '',
+  };
+  selected = -1;
+  store.set(SAVE_KEY, game);
+}
+
+function loadGame() {
+  const g = store.get(SAVE_KEY);
+  const ok = g && /^\d{6}$/.test(g.code) && Array.isArray(g.words) && g.words.length === 25
+    && Array.isArray(g.open) && g.open.length === 25;
+  return ok ? g : null;
+}
+
+function remaining(team) {
+  return key.cells.reduce((n, c, i) => n + (c === team && !game.open[i]), 0);
+}
+
+function reveal(i) {
+  const role = key.cells[i];
+  game.open[i] = true;
+  selected = -1;
+  if (role === 'attentaeter') {
+    game.winner = otherTeam(game.turn);
+    game.reason = `${TEAM[game.turn]} hat den Attentäter aufgedeckt`;
+  } else if (remaining('rot') === 0 || remaining('blau') === 0) {
+    game.winner = remaining('rot') === 0 ? 'rot' : 'blau';
+    game.reason = 'Alle Agenten gefunden';
+  } else if (role !== game.turn) {
+    game.turn = otherTeam(game.turn);
+  }
+  store.set(SAVE_KEY, game);
+  renderTisch();
+}
+
+function renderTisch() {
+  key = keyFromCode(game.code);
+  const over = !!game.winner;
+  const active = over ? game.winner : game.turn;
+
+  $('tisch').dataset.turn = active;
+  $('scoreRot').firstElementChild.textContent = remaining('rot');
+  $('scoreBlau').firstElementChild.textContent = remaining('blau');
+  $('scoreRot').classList.toggle('active', active === 'rot');
+  $('scoreBlau').classList.toggle('active', active === 'blau');
+  $('turnText').textContent = over ? `${TEAM[game.winner]} gewinnt!` : `${TEAM[game.turn]} ist dran`;
+  $('turnSub').textContent = over ? game.reason : '';
+  $('tischCode').textContent = fmtCode(game.code);
+  $('btnEnd').disabled = over;
+  $('btnAgain').classList.toggle('primary', over);
+  resetAgain();
+
+  const grid = $('grid');
+  grid.replaceChildren(...game.words.map((word, i) => {
+    const card = document.createElement('button');
+    card.className = 'card';
+    if (game.open[i]) card.classList.add('open', key.cells[i]);
+    else if (over) card.classList.add('peek', key.cells[i]);
+    else if (i === selected) card.classList.add('sel');
+    card.dataset.i = i;
+    const half = flip => {
+      const div = document.createElement('div');
+      div.className = flip ? 'half flip' : 'half';
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = word;
+      div.append(span);
+      return div;
+    };
+    const sep = document.createElement('i');
+    sep.className = 'sep';
+    card.append(half(true), sep, half(false));
+    return card;
+  }));
+  fitWords();
+}
+
+// Lange Wörter so weit verkleinern, dass sie in die Karte passen.
+function fitWords() {
+  const cards = [...$('grid').children].map(c => ({ el: c, words: [...c.querySelectorAll('.word')] }));
+  for (const c of cards) for (const w of c.words) w.style.transform = '';
+  const scales = cards.map(c => {
+    const avail = c.el.clientWidth * 0.9;
+    const need = c.words[0].offsetWidth;
+    return need > avail ? avail / need : 1;
+  });
+  cards.forEach((c, i) => {
+    if (scales[i] === 1) return;
+    const s = `scale(${scales[i].toFixed(3)})`;
+    c.words[0].style.transform = 'rotate(180deg) ' + s;
+    c.words[1].style.transform = s;
+  });
+}
+
+$('grid').addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card || game.winner) return;
+  const i = Number(card.dataset.i);
+  if (game.open[i]) return;
+  if (selected === i) return reveal(i);
+  selected = i;
+  renderTisch();
+});
+
+$('btnEnd').addEventListener('click', () => {
+  game.turn = otherTeam(game.turn);
+  selected = -1;
+  store.set(SAVE_KEY, game);
+  renderTisch();
+});
+
+// "Neues Spiel" braucht mitten in einer Partie einen zweiten Tipp zur Bestätigung.
+let againTimer = 0;
+function resetAgain() {
+  clearTimeout(againTimer);
+  $('btnAgain').textContent = 'Neues Spiel';
+  $('btnAgain').classList.remove('warn');
+}
+$('btnAgain').addEventListener('click', () => {
+  const btn = $('btnAgain');
+  if (game.winner || btn.classList.contains('warn')) {
+    newGame();
+    renderTisch();
+    return;
+  }
+  btn.textContent = 'Wirklich neu?';
+  btn.classList.add('warn');
+  againTimer = setTimeout(resetAgain, 3000);
+});
+
+$('btnMenu').addEventListener('click', () => { location.hash = ''; });
+new ResizeObserver(() => { if (!$('tisch').hidden) fitWords(); }).observe($('grid'));
+
+/* ---------- Geheimdienstchef ---------- */
+
+let chefCode = '';
+
+function renderChef() {
+  const k = keyFromCode(chefCode);
+  const doneKey = 'agentos-chef-' + chefCode;
+  const done = store.get(doneKey) || [];
+
+  $('chefCode').textContent = fmtCode(chefCode);
+  $('btnNewCode').hidden = false;
+  $('newCodeForm').hidden = true;
+  $('newCodeInput').value = '';
+  $('btnNewCodeGo').disabled = true;
+  $('startInfo').innerHTML = `<span style="background:var(--${k.start})">${TEAM[k.start]}</span> beginnt`;
+  $('keyframe').className = 'keyframe ' + k.start + (store.get('agentos-rotated') ? ' rotated' : '');
+  $('keygrid').replaceChildren(...k.cells.map((role, i) => {
+    const cell = document.createElement('button');
+    cell.className = 'kc ' + role + (done.includes(i) ? ' done' : '');
+    cell.dataset.i = i;
+    if (role === 'attentaeter') cell.textContent = '✕';
+    return cell;
+  }));
+
+  const count = role => k.cells.filter(c => c === role).length;
+  $('legend').innerHTML = [['rot', 'Rot'], ['blau', 'Blau'], ['neutral', 'Neutral'], ['attentaeter', 'Attentäter']]
+    .map(([role, label]) => `<span><i style="background:var(--${role})"></i>${label} ${count(role)}</span>`)
+    .join('');
+}
+
+$('keygrid').addEventListener('click', e => {
+  const cell = e.target.closest('.kc');
+  if (!cell) return;
+  cell.classList.toggle('done');
+  const done = [...$('keygrid').children].flatMap((c, i) => c.classList.contains('done') ? [i] : []);
+  store.set('agentos-chef-' + chefCode, done);
+});
+
+$('btnRotate').addEventListener('click', () => {
+  store.set('agentos-rotated', $('keyframe').classList.toggle('rotated'));
+});
+$('btnBack').addEventListener('click', () => { location.hash = ''; });
+
+// Nächste Partie: neuen Code direkt in der Chef-Ansicht eintippen.
+$('btnNewCode').addEventListener('click', () => {
+  $('btnNewCode').hidden = true;
+  $('newCodeForm').hidden = false;
+  $('newCodeInput').focus();
+});
+$('newCodeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('newCodeInput').value;
+  if (!/^\d{6}$/.test(code)) return;
+  if (location.hash === '#chef=' + code) route();
+  else location.hash = 'chef=' + code;
+});
+
+/* ---------- Start ---------- */
+
+// Code-Felder nehmen nur Ziffern; der Knopf wird erst mit 6 Stellen aktiv.
+function bindCodeInput(input, button) {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '').slice(0, 6);
+    button.disabled = input.value.length !== 6;
+  });
+}
+bindCodeInput($('codeInput'), $('btnChef'));
+bindCodeInput($('newCodeInput'), $('btnNewCodeGo'));
+$('chefForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('codeInput').value;
+  if (/^\d{6}$/.test(code)) location.hash = 'chef=' + code;
+});
+$('btnNew').addEventListener('click', () => {
+  newGame();
+  location.hash = 'tisch';
+});
+$('btnResume').addEventListener('click', () => { location.hash = 'tisch'; });
+
+/* ---------- Navigation ---------- */
+
+function show(id) {
+  for (const s of ['start', 'tisch', 'chef']) $(s).hidden = s !== id;
+}
+
+function route() {
+  const hash = location.hash.slice(1);
+  const chef = /^chef=(\d{6})$/.exec(hash);
+  if (chef) {
+    chefCode = chef[1];
+    show('chef');
+    renderChef();
+    keepAwake();
+  } else if (hash === 'tisch') {
+    game = loadGame();
+    if (!game) newGame();
+    selected = -1;
+    show('tisch');
+    renderTisch();
+    keepAwake();
+  } else {
+    const saved = loadGame();
+    const running = !!saved && !saved.winner;
+    $('btnResume').hidden = !running;
+    $('btnNew').classList.toggle('primary', !running);
+    $('codeInput').value = '';
+    $('btnChef').disabled = true;
+    show('start');
+  }
+}
+
+// Bildschirm anlassen, solange das Spiel offen ist (wo der Browser das erlaubt).
+async function keepAwake() {
+  try {
+    if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+      await navigator.wakeLock.request('screen');
+    }
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (location.hash) keepAwake(); });
+
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
